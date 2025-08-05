@@ -1,37 +1,35 @@
 # Core FastAPI and async support
 fastapi
 uvicorn[standard]
-pydantic
+pydantic    
 python-multipart
+
 # Document Processing
 python-docx
 PyPDF2
+PyMuPDF  # fitz library for better PDF parsing
 filetype
-fitz
-frontend
+tools
+
 # Embeddings and Vector Search
 sentence-transformers
 faiss-cpu
-numpy
+numpy  
 
 # LLM and NLP
 transformers
 torch
-
 optimum
 tokenizers
 
-langchain
-langchain-community
-tiktoken
-nltk
+# Groq API
+groq
 
 # HTTP Client and Async
 httpx
 aiofiles
-asyncio
 
-groq
 # Additional Libraries
 loguru
 python-dotenv
+
