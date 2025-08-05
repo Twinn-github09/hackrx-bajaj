@@ -8,7 +8,7 @@ python-docx
 PyPDF2
 filetype
 fitz
-
+frontend
 # Embeddings and Vector Search
 sentence-transformers
 faiss-cpu
