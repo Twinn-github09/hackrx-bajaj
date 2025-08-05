@@ -1,3 +1,6 @@
+
+setuptools>=42
+wheel
 # Core FastAPI and async support
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
