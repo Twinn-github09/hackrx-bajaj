@@ -5,9 +5,11 @@ from typing import List, Dict, Any, Optional
 import tempfile
 import os
 from abc import ABC, abstractmethod
-import fitz  # PyMuPDF
+import fitz  # PyMuPDFac    
 import logging
-
+import email
+from email import policy
+from email.parser import BytesParser 
 logger = logging.getLogger(__name__)
 
 class DocumentParser(ABC):
@@ -92,7 +94,56 @@ class DOCXParser(DocumentParser):
         except Exception as e:
             logger.error(f"Error parsing DOCX {file_path}: {str(e)}")
             raise
+class EMLParser(DocumentParser):
+    """Parser for EML email documents"""
 
+    async def parse(self, file_path: str) -> Dict[str, Any]:
+        """Parse EML document"""
+        try:
+            with open(file_path, 'rb') as file:
+                msg = BytesParser(policy=policy.default).parse(file)
+
+            subject = msg.get("subject", "")
+            sender = msg.get("from", "")
+            recipient = msg.get("to", "")
+            date = msg.get("date", "")
+            body = self._get_body(msg)
+
+            metadata = {
+                "subject": subject,
+                "from": sender,
+                "to": recipient,
+                "date": date,
+                "format": "eml"
+            }
+
+            content = [{"part": "body", "content": body.strip()}] if body.strip() else []
+
+            # Clean up temp file if it was downloaded
+            if file_path.startswith(tempfile.gettempdir()):
+                os.unlink(file_path)
+
+            return {
+                "content": content,
+                "metadata": metadata,
+                "total_text": body.strip()
+            }
+
+        except Exception as e:
+            logger.error(f"Error parsing EML file {file_path}: {str(e)}")
+            raise
+
+    def _get_body(self, msg) -> str:
+        """Extract plain text body from email"""
+        if msg.is_multipart():
+            for part in msg.walk():
+                content_type = part.get_content_type()
+                content_disposition = str(part.get("Content-Disposition"))
+                if content_type == "text/plain" and "attachment" not in content_disposition:
+                    return part.get_content()
+        else:
+            return msg.get_content()
+        return ""
 class TextParser(DocumentParser):
     """Parser for plain text documents"""
     
@@ -133,18 +184,18 @@ class DocumentParserFactory:
     _parsers = {
         '.pdf': PDFParser,
         '.docx': DOCXParser,
-        '.doc': DOCXParser,  # Basic support for .doc files
+        '.doc': DOCXParser,
         '.txt': TextParser,
+        '.eml': EMLParser  
     }
-    
+
     @classmethod
     def create_parser(cls, file_path: str) -> DocumentParser:
-        """Create appropriate parser based on file extension"""
         ext = Path(file_path).suffix.lower()
-        
+
         if ext not in cls._parsers:
-            # Try to infer from content or default to text
             logger.warning(f"Unknown file extension {ext}, defaulting to text parser")
             return TextParser()
-        
+
         return cls._parsers[ext]()
+
